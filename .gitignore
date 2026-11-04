@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.klipper-check/
+build/
+dist/
+# local runtime data / configs
+/artifex.yaml
+/config.yaml
+/data/
+inference_server/.venv/
+inference_server/Hunyuan3D-2.1/

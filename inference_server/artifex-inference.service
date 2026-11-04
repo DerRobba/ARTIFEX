@@ -1,0 +1,17 @@
+[Unit]
+Description=ARTIFEX GPU inference server (z-image-turbo + Hunyuan3D-2.1)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Adjust user and paths to your installation.
+User=artifex
+WorkingDirectory=/opt/artifex/inference_server
+Environment=ARTIFEX_INFERENCE_KEY=change-me
+ExecStart=/opt/artifex/inference_server/.venv/bin/python server.py --host 0.0.0.0 --port 8765
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
