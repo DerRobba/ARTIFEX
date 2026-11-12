@@ -22,14 +22,19 @@ def _sections(path: Path) -> list[str]:
     return re.findall(r"^\[([^\]]+)\]", path.read_text(encoding="utf-8"), re.M)
 
 
-def test_includes_exist():
-    text = (KLIPPER / "printer.cfg").read_text()
+ENTRY_POINTS = ["printer.cfg", "printer-creality-v4.2.2.cfg"]
+
+
+@pytest.mark.parametrize("entry", ENTRY_POINTS)
+def test_includes_exist(entry):
+    text = (KLIPPER / entry).read_text()
     for inc in re.findall(r"^#?\s*\[include ([^\]]+)\]", text, re.M):
         assert (KLIPPER / inc).is_file(), inc
 
 
 def test_config_files_parse():
-    for f in [KLIPPER / "printer.cfg", *sorted((KLIPPER / "artifex").glob("*.cfg"))]:
+    for f in [*(KLIPPER / e for e in ENTRY_POINTS), *sorted((KLIPPER / "artifex").glob("*.cfg")),
+              *sorted((KLIPPER / "boards").glob("*.cfg"))]:
         cp = configparser.RawConfigParser(strict=False, inline_comment_prefixes=("#", ";"))
         cp.read_string(f.read_text(encoding="utf-8"))
         assert cp.sections(), f
@@ -66,6 +71,31 @@ def test_klippy_batch(tmp_path):
         [py, str(kdir / "klippy" / "klippy.py"), str(cfg_dir / "printer.cfg"), "-i", str(gcode),
          "-o", str(tmp_path / "out.serial"), "-v", "-d", str(kdir / "out" / "klipper.dict"), "-l", str(log)],
         env={**os.environ, "HOME": str(home)}, timeout=600, check=False,
+    )
+    text = log.read_text()
+    assert "Exiting (print time" in text
+    assert "Error evaluating" not in text and "Move out of range" not in text
+
+
+@pytest.mark.skipif(not os.environ.get("KLIPPER_DICT_F103"), reason="set KLIPPER_DICT_F103 (STM32F103 klipper.dict)")
+def test_klippy_batch_creality_board(tmp_path):
+    kdir = Path(os.environ["KLIPPER_DIR"])
+    py = os.environ.get("KLIPPY_PYTHON", "python3")
+    cfg_dir = tmp_path / "home" / "printer_data" / "config"
+    cfg_dir.mkdir(parents=True)
+    (tmp_path / "home" / "printer_data" / "gcodes").mkdir()
+    for name in ("artifex", "boards"):
+        (cfg_dir / name).symlink_to(KLIPPER / name)
+    (cfg_dir / "printer.cfg").write_text((KLIPPER / "printer-creality-v4.2.2.cfg").read_text())
+    gcode = tmp_path / "t.gcode"
+    gcode.write_text("G28\nPRINT_START BED=60 EXTRUDER=210 SLOT=0 MATERIAL=PLA\nG1 X100 Y100 Z0.3 F3000\n"
+                     "G1 X120 E1 F1200\nPAUSE\nRESUME\nFILTER_ON\nPRINT_END\nTOOL_CHANGE TOOL=laser\n"
+                     "TOOL_CONFIRM\nCANCEL_PRINT\n")
+    log = tmp_path / "klippy.log"
+    subprocess.run(
+        [py, str(kdir / "klippy" / "klippy.py"), str(cfg_dir / "printer.cfg"), "-i", str(gcode),
+         "-o", str(tmp_path / "out.serial"), "-v", "-d", os.environ["KLIPPER_DICT_F103"], "-l", str(log)],
+        env={**os.environ, "HOME": str(tmp_path / "home")}, timeout=600, check=False,
     )
     text = log.read_text()
     assert "Exiting (print time" in text
