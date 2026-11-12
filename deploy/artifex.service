@@ -1,0 +1,20 @@
+[Unit]
+Description=ARTIFEX host software (AI pipeline, slicer, touch UI backend)
+Documentation=https://github.com/DerRobba/ARTIFEX
+After=network-online.target moonraker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=@USER@
+WorkingDirectory=@REPO@
+Environment=ARTIFEX_CONFIG=@PRINTER_DATA@/config/artifex.yaml
+# Secrets (API keys) can be put into this optional file as KEY=value lines:
+EnvironmentFile=-@PRINTER_DATA@/config/artifex.env
+ExecStart=@VENV@/bin/python -m artifex serve
+Restart=always
+RestartSec=5
+Nice=5
+
+[Install]
+WantedBy=multi-user.target

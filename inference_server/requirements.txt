@@ -1,0 +1,17 @@
+# ARTIFEX inference server (GPU machine, CUDA 12.x)
+# Install torch first matching your CUDA version, e.g.:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
+pillow>=10
+numpy>=1.26
+trimesh>=4.0
+fast_simplification>=0.1.7
+# Z-Image support landed in diffusers in late 2025 - install from git if your
+# release does not have ZImagePipeline yet.
+diffusers>=0.36
+transformers>=4.51
+accelerate>=1.0
+safetensors
+# Hunyuan3D-2.1 (shape only) is installed by setup.sh from its git repository.

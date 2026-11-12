@@ -68,6 +68,25 @@ ARTIFEX runs its own **magnetic modular filament system** — a fully custom alt
 ### 🌬️ HEPA + ACF Filtration
 Integrated dual-stage filtration captures ultrafine particles and VOCs — important for enclosed printing with engineering filaments.
 
+### 🖥️ ARTIFEX Software System
+
+Everything runs on the Raspberry Pi inside the printer, with a touch display as the main interface:
+
+- **Touch UI** (Chromium kiosk) – type a prompt on the on-screen keyboard, watch the pipeline, rotate the 3D preview, scrub through the sliced layers, start/pause prints, manage AFS slots and swap tools. The same UI works from any phone or PC in the LAN.
+- **AI pipeline** – prompt routing, OpenSCAD code generation with automatic error repair, image-to-3D via a GPU inference server, mesh repair & auto-orientation, AI-assisted print settings, iterative edits ("make it twice as tall").
+- **ARTIFEX Slicer** – in-house slicer (perimeters, top/bottom detection, grid/triangle infill, supports, brim, AFS colour changes) producing Klipper G-code; OrcaSlicer CLI as alternative backend.
+- **Klipper configuration** – SKR Pico + CoreXY config and macros for print start/end, the AFS (manual or motorised), the magnetic toolhead and the HEPA/ACF filter, validated in Klipper's batch mode.
+- **Works offline** – without internet ARTIFEX falls back to rule-based routing and parametric templates.
+
+![ARTIFEX touch UI](docs/img/ui-job-3d.png)
+
+➡️ **Full documentation: [docs/SOFTWARE.md](docs/SOFTWARE.md)** (architecture, installation, configuration, API, tests)
+
+```bash
+# on the Raspberry Pi (Klipper + Moonraker installed via KIAUH)
+git clone https://github.com/DerRobba/ARTIFEX.git ~/ARTIFEX && ~/ARTIFEX/deploy/install.sh
+```
+
 ---
 
 ## Hardware Overview
@@ -98,6 +117,9 @@ Integrated dual-stage filtration captures ultrafine particles and VOCs — impor
 | Parametric models | OpenSCAD + AI codegen |
 | Slicing | Custom slicer (in-house) and Orca Compatibility |
 | Printer firmware | Klipper / Moonraker |
+| Host software | Python (FastAPI, trimesh, shapely) on Raspberry Pi |
+| Display | Touch UI in Chromium kiosk (cage / Wayland) |
+| GPU inference | FastAPI server (diffusers + Hunyuan3D-2.1) on a CUDA PC |
 
 ---
 
@@ -105,12 +127,13 @@ Integrated dual-stage filtration captures ultrafine particles and VOCs — impor
 
 - [ ] Hardware design & component selection (in progress)
 - [ ] CoreXY frame assembly
-- [ ] Klipper firmware setup
-- [ ] AFS (ARTIFEX Filament System) — magnetic modular design
-- [ ] AI pipeline — prompt routing (organic vs. parametric)
-- [ ] z-image-turbo + Hunyuan3D-2.1 integration
-- [ ] OpenSCAD code generation integration
-- [ ] Custom slicer development
+- [ ] Klipper firmware setup — *configuration & macros written, calibration on the real machine pending*
+- [ ] AFS (ARTIFEX Filament System) — magnetic modular design — *software (manual + motorised mode) ready, hardware pending*
+- [x] AI pipeline — prompt routing (organic vs. parametric)
+- [ ] z-image-turbo + Hunyuan3D-2.1 integration — *inference server written, needs testing on a GPU machine*
+- [x] OpenSCAD code generation integration
+- [x] Custom slicer development (v0.1)
+- [x] Touch display UI + Raspberry Pi installer — *first run on the real Pi pending*
 - [ ] **First full prototype — February 2027** 🎯
 
 ---

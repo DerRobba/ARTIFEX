@@ -1,0 +1,67 @@
+# =============================================================================
+#  ARTIFEX host configuration  (~/printer_data/config/artifex.yaml)
+#  Every key is optional - the values below are the defaults.
+#  Secrets: put API keys into ~/printer_data/config/artifex.env, e.g.
+#     OPENAI_API_KEY=sk-...
+#     ARTIFEX_INFERENCE_KEY=...
+# =============================================================================
+
+data_dir: ~/printer_data/artifex   # jobs, models, G-code, AFS state
+default_size_mm: 60                # size when the prompt does not mention one
+auto_print: false                  # true = start printing right after slicing
+
+# --- Prompt refinement, routing, OpenSCAD codegen, AI print settings ----------
+# Any OpenAI-compatible endpoint works:
+#   OpenAI cloud : base_url https://api.openai.com/v1      (OPENAI_API_KEY)
+#   Ollama (LAN) : base_url http://<pc>:11434/v1           model e.g. qwen2.5-coder:14b
+#   llama.cpp    : base_url http://<pc>:8080/v1
+#   LM Studio    : base_url http://<pc>:1234/v1            json_mode: none
+llm:
+  enabled: true
+  base_url: https://api.openai.com/v1
+  model: gpt-5-mini
+  # codegen_model: gpt-5        # optional stronger model for OpenSCAD code
+  # temperature: 0.2            # leave unset for reasoning models
+  json_mode: json_object
+  timeout_s: 120
+
+# --- GPU inference server (inference_server/ on a PC with NVIDIA GPU) ---------
+inference:
+  url: http://artifex-gpu.local:8765
+  image_steps: 9           # z-image-turbo is distilled for ~8-9 steps
+  mesh_steps: 30           # Hunyuan3D-2.1 flow-matching steps
+  octree_resolution: 256
+  max_faces: 150000
+
+openscad:
+  binary: openscad
+  max_attempts: 4          # AI repair rounds after compile/geometry errors
+  timeout_s: 180
+  allowed_libraries: []    # e.g. ["BOSL2/"] if installed in ~/.local/share/OpenSCAD/libraries
+  extra_args: []           # e.g. ["--backend=manifold"] with OpenSCAD >= 2024
+
+printer:
+  moonraker_url: http://127.0.0.1:7125
+  bed_x: 235
+  bed_y: 235
+  max_z: 250
+  margin: 8
+  nozzle_diameter: 0.4
+  filament_diameter: 1.75
+
+slicer:
+  backend: artifex         # artifex (built-in) | orca (OrcaSlicer CLI)
+  ai_settings: true
+  # OrcaSlicer: export machine/process/filament profiles from the Orca GUI
+  # (machine start G-code must call PRINT_START, see docs/SOFTWARE.md)
+  # orca_command: /usr/bin/orca-slicer
+  # orca_machine_profile: /home/pi/orca/ARTIFEX.json
+  # orca_process_profile: /home/pi/orca/0.20mm Standard @ARTIFEX.json
+  # orca_filament_profile: /home/pi/orca/ARTIFEX PLA.json
+
+afs:
+  slots: 4
+
+server:
+  host: 0.0.0.0
+  port: 8080

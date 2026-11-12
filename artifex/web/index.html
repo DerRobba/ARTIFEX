@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#111317">
+  <title>ARTIFEX</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">ARTIFEX</div>
+    <div class="top-status" id="top-status">
+      <span class="pill" id="st-state">offline</span>
+      <span class="temp" id="st-nozzle" title="Düse">🔥 –</span>
+      <span class="temp" id="st-bed" title="Bett">▭ –</span>
+      <span class="mini-progress" id="st-progress" hidden><span></span></span>
+    </div>
+    <button class="estop" id="btn-estop" title="Not-Aus">NOT-AUS</button>
+  </header>
+
+  <nav class="rail" id="rail">
+    <button data-view="create" class="active"><span class="ico">✦</span><span>Erstellen</span></button>
+    <button data-view="jobs"><span class="ico">☰</span><span>Aufträge</span><b class="badge" id="jobs-badge" hidden></b></button>
+    <button data-view="printer"><span class="ico">⎔</span><span>Drucker</span></button>
+    <button data-view="afs"><span class="ico">◉</span><span>AFS</span></button>
+    <button data-view="system"><span class="ico">⚙</span><span>System</span></button>
+  </nav>
+
+  <main id="main">
+    <!-- CREATE -->
+    <section class="view active" id="view-create">
+      <div class="create-grid">
+        <div class="prompt-card card">
+          <label class="label" for="prompt">Was soll ARTIFEX drucken?</label>
+          <textarea id="prompt" rows="3" maxlength="1000" placeholder="z. B. „eine kleine Eule auf einem Ast“ oder „Box 80 × 50 × 30 mm mit Deckel“"></textarea>
+          <div class="chips" id="idea-chips"></div>
+        </div>
+        <div class="options card">
+          <div class="opt">
+            <span class="label">Modus</span>
+            <div class="seg" id="opt-mode">
+              <button data-v="auto" class="on">Auto (KI)</button>
+              <button data-v="organic">Organisch</button>
+              <button data-v="parametric">Parametrisch</button>
+            </div>
+          </div>
+          <div class="opt">
+            <span class="label">Größe <b id="size-label">Auto</b></span>
+            <input type="range" id="opt-size" min="0" max="200" step="5" value="0">
+          </div>
+          <div class="opt">
+            <span class="label">Filament (AFS-Slot)</span>
+            <div class="slot-pick" id="opt-slot"></div>
+          </div>
+          <div class="opt row">
+            <label class="toggle"><input type="checkbox" id="opt-autoprint"><span></span> Danach automatisch drucken</label>
+          </div>
+          <button class="btn primary big" id="btn-generate">✦ Generieren</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- JOBS -->
+    <section class="view" id="view-jobs">
+      <div class="list-head">
+        <h2>Aufträge</h2>
+        <label class="btn ghost small upload-btn">STL hochladen<input type="file" id="upload" accept=".stl,.obj,.3mf,.glb,.ply" hidden></label>
+      </div>
+      <div class="job-list" id="job-list"></div>
+    </section>
+
+    <!-- JOB DETAIL -->
+    <section class="view" id="view-job">
+      <div class="detail-head">
+        <button class="btn ghost small" id="btn-back">‹ Zurück</button>
+        <h2 id="jd-title">–</h2>
+        <span class="pill" id="jd-status"></span>
+      </div>
+      <div class="detail-grid">
+        <div class="preview card">
+          <div class="tabs" id="jd-tabs">
+            <button data-tab="3d" class="on">3D</button>
+            <button data-tab="image">Bild</button>
+            <button data-tab="layers">Schichten</button>
+            <button data-tab="code">Code</button>
+          </div>
+          <div class="tab-body">
+            <canvas id="viewer3d" class="tab-pane on" data-pane="3d"></canvas>
+            <div class="tab-pane img-pane" data-pane="image"><img id="jd-image" alt="Generiertes Bild"></div>
+            <div class="tab-pane" data-pane="layers">
+              <canvas id="layer-canvas"></canvas>
+              <div class="layer-ctrl"><input type="range" id="layer-slider" min="1" max="1" value="1"><span id="layer-label">–</span></div>
+            </div>
+            <pre class="tab-pane code" data-pane="code" id="jd-code"></pre>
+            <div class="preview-empty" id="preview-empty">Noch kein Modell</div>
+          </div>
+        </div>
+        <div class="side">
+          <div class="card">
+            <div class="stages" id="jd-stages"></div>
+            <div class="progress"><span id="jd-progress"></span></div>
+            <div class="msg" id="jd-message"></div>
+            <div class="error" id="jd-error" hidden></div>
+          </div>
+          <div class="card info" id="jd-info"></div>
+          <div class="actions" id="jd-actions"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRINTER -->
+    <section class="view" id="view-printer">
+      <div class="printer-grid">
+        <div class="card print-card">
+          <div class="label">Aktueller Druck</div>
+          <div class="pc-file" id="pc-file">Kein Druck aktiv</div>
+          <div class="progress big"><span id="pc-bar"></span></div>
+          <div class="pc-stats">
+            <div><b id="pc-pct">0 %</b><small>Fortschritt</small></div>
+            <div><b id="pc-layer">–</b><small>Schicht</small></div>
+            <div><b id="pc-time">–</b><small>Dauer</small></div>
+            <div><b id="pc-left">–</b><small>Rest (ca.)</small></div>
+          </div>
+          <div class="pc-msg" id="pc-msg"></div>
+          <div class="btn-row">
+            <button class="btn" data-act="pause" id="btn-pause">⏸ Pause</button>
+            <button class="btn" data-act="resume" id="btn-resume">▶ Weiter</button>
+            <button class="btn danger" data-act="cancel" id="btn-cancel" data-confirm="Druck wirklich abbrechen?">✕ Abbrechen</button>
+          </div>
+        </div>
+        <div class="card temps">
+          <button class="temp-tile" id="tile-nozzle" data-heater="extruder"><small>Düse</small><b>–</b><span>Ziel –</span></button>
+          <button class="temp-tile" id="tile-bed" data-heater="bed"><small>Bett</small><b>–</b><span>Ziel –</span></button>
+          <div class="btn-row wrap">
+            <button class="btn small" data-preheat="PLA">PLA</button>
+            <button class="btn small" data-preheat="PETG">PETG</button>
+            <button class="btn small" data-preheat="ABS">ABS</button>
+            <button class="btn small" data-act="cooldown">❄ Abkühlen</button>
+          </div>
+        </div>
+        <div class="card controls">
+          <div class="label">Steuerung</div>
+          <div class="btn-row wrap">
+            <button class="btn" data-act="home">⌂ Referenzfahrt</button>
+            <button class="btn" data-act="motors_off">Motoren aus</button>
+            <button class="btn" data-act="bed_mesh">Bett vermessen</button>
+            <button class="btn" data-act="park">Parken</button>
+          </div>
+          <div class="label">Filter (HEPA + Aktivkohle)</div>
+          <div class="btn-row">
+            <button class="btn" data-act="filter_on">Filter an</button>
+            <button class="btn" data-act="filter_off">Filter aus</button>
+            <span class="pill" id="filter-state">–</span>
+          </div>
+          <div class="label">Werkzeugkopf (magnetisch)</div>
+          <div class="btn-row wrap" id="tool-row"><span class="pill" id="tool-state">–</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AFS -->
+    <section class="view" id="view-afs">
+      <div class="list-head"><h2>ARTIFEX Filament System</h2><span class="pill" id="afs-mode">–</span></div>
+      <div class="afs-grid" id="afs-grid"></div>
+    </section>
+
+    <!-- SYSTEM -->
+    <section class="view" id="view-system">
+      <div class="list-head"><h2>System</h2><button class="btn ghost small" id="btn-sys-refresh">↻ Aktualisieren</button></div>
+      <div class="sys-grid" id="sys-grid"></div>
+      <div class="btn-row wrap sys-actions">
+        <button class="btn" data-act="firmware_restart" data-confirm="Klipper-Firmware neu starten?">Klipper neu starten</button>
+        <button class="btn" data-act="reboot" data-confirm="Raspberry Pi neu starten?">Pi neu starten</button>
+        <button class="btn danger" data-act="shutdown" data-confirm="Raspberry Pi herunterfahren?">Herunterfahren</button>
+        <button class="btn ghost" id="btn-fullscreen">Vollbild</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- modal + keyboard + toast -->
+  <div class="modal-bg" id="modal-bg" hidden>
+    <div class="modal card" id="modal"></div>
+  </div>
+  <div class="osk" id="osk" hidden></div>
+  <div class="toasts" id="toasts"></div>
+
+  <script src="viewer.js"></script>
+  <script src="layers.js"></script>
+  <script src="keyboard.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
