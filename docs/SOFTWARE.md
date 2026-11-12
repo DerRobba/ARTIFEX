@@ -194,6 +194,8 @@ and the end G-code `PRINT_END`.
 ```
 klipper/
 ├── printer.cfg            entry point (MCU serial, kinematics limits, virtual_sdcard …)
+├── printer-creality-v4.2.2.cfg   entry point for the temporary Creality board
+├── boards/creality-v4.2.2.cfg    pins for that board
 └── artifex/
     ├── hardware.cfg       SKR Pico pins, CoreXY steppers, TMC2209, E3D V6, bed, fans, LED
     ├── z_switch.cfg       Z endstop switch            (default)
@@ -205,6 +207,22 @@ klipper/
     ├── filtration.cfg     HEPA + ACF filter fan with auto mode and run-on
     └── sensors.cfg        filament runout, toolhead presence (optional)
 ```
+
+### Temporary board: Creality v4.2.2
+
+Until the SKR Pico is installed, `klipper/printer-creality-v4.2.2.cfg` runs the printer on a
+stock Creality v4.2.2 board (STM32F103, no UART drivers). Filter fan, LED strip and motorised
+AFS are not available there (`filtration_stub.cfg` keeps the macros working).
+
+1. Klipper firmware: `cd ~/klipper && make menuconfig` → STM32 / STM32F103 / 28KiB bootloader
+   offset / 8 MHz crystal / Serial (USART1 PA10/PA9); `make clean && make -j4`.
+2. Copy `~/klipper/out/klipper.bin` to a FAT32 SD card under a **new unique name**
+   (e.g. `artifex-001.bin`, not `firmware.bin`), insert, power-cycle the printer, wait ~30 s.
+3. `ls /dev/serial/by-id/` → set `serial:` in the config.
+4. `cp ~/ARTIFEX/klipper/printer-creality-v4.2.2.cfg ~/printer_data/config/printer.cfg`
+   (the `artifex/` and `boards/` folders must sit next to it), then
+   `sudo systemctl restart klipper`.
+5. Check motor directions/endstop sides before the first move (`!` on `dir_pin`/`endstop_pin`).
 
 ### Macro interface
 
